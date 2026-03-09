@@ -1,0 +1,36 @@
+{
+  "name": "quarterly",
+  "version": "0.1.0",
+  "description": "Quarterly is a desktop-first finance planner for split-month budgeting and debt payoff visibility.",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:5180 && env -u ELECTRON_RUN_AS_NODE electron .\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder --config electron-builder.config.cjs",
+    "dist:mac-arm64": "npm run build && electron-builder --config electron-builder.config.cjs --mac dmg zip --arm64",
+    "publish:mac-arm64": "npm run build && electron-builder --config electron-builder.config.cjs --publish always --mac dmg zip --arm64",
+    "dist:win": "npm run build && electron-builder --config electron-builder.config.cjs --win nsis --x64",
+    "publish:win": "npm run build && electron-builder --config electron-builder.config.cjs --publish always --win nsis --x64",
+    "dist:win-portable": "npm run build && electron-builder --config electron-builder.config.cjs --win portable --x64"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
+    "dotenv": "^17.3.1",
+    "electron-updater": "^6.8.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "concurrently": "^9.2.1",
+    "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "wait-on": "^9.0.4"
+  }
+}
