@@ -30,6 +30,7 @@ npm run dev
 ## Build
 
 ```bash
+npm run generate:icons
 npm run build
 npm run dist
 ```

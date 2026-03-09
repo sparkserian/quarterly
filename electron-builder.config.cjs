@@ -10,13 +10,19 @@ module.exports = {
   appId: 'com.quarterly.desktop',
   artifactName: '${productName}-${version}-${arch}.${ext}',
   directories: {
+    buildResources: 'build',
     output: 'release',
   },
   files: ['dist/**/*', 'electron/**/*', 'package.json'],
   mac: {
     artifactName: '${productName}-${version}-${arch}.${ext}',
     category: 'public.app-category.finance',
+    icon: 'build/icon.icns',
     target: ['dmg', 'zip'],
+  },
+  nsis: {
+    installerIcon: 'build/icon.ico',
+    uninstallerIcon: 'build/icon.ico',
   },
   productName: 'Quarterly',
   ...(owner && repo
@@ -33,6 +39,7 @@ module.exports = {
     : {}),
   win: {
     artifactName: '${productName}-${version}-${arch}.${ext}',
+    icon: 'build/icon.ico',
     target: ['nsis'],
   },
 };

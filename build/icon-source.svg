@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Quarterly app icon</title>
+  <desc id="desc">Dark rounded-square icon with a bold stylized Q mark.</desc>
+  <rect x="76" y="76" width="872" height="872" rx="232" fill="#0B0B0D" />
+  <rect x="78" y="78" width="868" height="868" rx="230" fill="none" stroke="#2A2A2F" stroke-width="8" />
+  <path
+    fill="#F8FAFC"
+    fill-rule="evenodd"
+    d="M472 232a240 240 0 1 1 0 480a240 240 0 1 1 0-480ZM472 330a142 142 0 1 0 0 284a142 142 0 1 0 0-284ZM620 598l182 182l-64 64l-182-182Z"
+  />
+</svg>

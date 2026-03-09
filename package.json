@@ -12,7 +12,8 @@
     "publish:mac-arm64": "npm run build && electron-builder --config electron-builder.config.cjs --publish always --mac dmg zip --arm64",
     "dist:win": "npm run build && electron-builder --config electron-builder.config.cjs --win nsis --x64",
     "publish:win": "npm run build && electron-builder --config electron-builder.config.cjs --publish always --win nsis --x64",
-    "dist:win-portable": "npm run build && electron-builder --config electron-builder.config.cjs --win portable --x64"
+    "dist:win-portable": "npm run build && electron-builder --config electron-builder.config.cjs --win portable --x64",
+    "generate:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
@@ -29,8 +30,11 @@
     "concurrently": "^9.2.1",
     "electron": "^40.8.0",
     "electron-builder": "^26.8.1",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "wait-on": "^9.0.4"
-  }
+  },
+  "author": "William F. Awuku Jr."
 }
