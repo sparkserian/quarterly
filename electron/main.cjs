@@ -7,6 +7,10 @@ let mainWindow = null;
 let updateDownloaded = false;
 let updaterConfigured = false;
 
+function isSameVersion(a, b) {
+  return String(a ?? '').trim() === String(b ?? '').trim();
+}
+
 function sendUpdaterStatus(payload) {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
@@ -82,6 +86,16 @@ function configureAutoUpdates() {
 
   autoUpdater
     .checkForUpdates()
+    .then((result) => {
+      const latestVersion = result?.updateInfo?.version ?? app.getVersion();
+      if (isSameVersion(latestVersion, app.getVersion())) {
+        sendUpdaterStatus({
+          message: `You are up to date on ${latestVersion}.`,
+          status: 'up-to-date',
+          version: latestVersion,
+        });
+      }
+    })
     .catch((error) => {
       updaterConfigured = false;
       sendUpdaterStatus({
@@ -138,21 +152,34 @@ ipcMain.handle('updater:check', async () => {
       message: 'Auto-updates only check from packaged builds.',
       status: 'dev-mode',
     });
-    return { ok: false };
+    return { ok: false, status: 'dev-mode', version: app.getVersion() };
   }
 
   try {
     updaterConfigured = true;
     updateDownloaded = false;
-    await autoUpdater.checkForUpdates();
-    return { ok: true };
+    const result = await autoUpdater.checkForUpdates();
+    const latestVersion = result?.updateInfo?.version ?? app.getVersion();
+    const status = isSameVersion(latestVersion, app.getVersion()) ? 'up-to-date' : 'available';
+
+    sendUpdaterStatus({
+      message:
+        status === 'available'
+          ? `Update ${latestVersion} is available. Downloading now.`
+          : `You are up to date on ${latestVersion}.`,
+      status,
+      version: latestVersion,
+    });
+
+    return { ok: true, status, version: latestVersion };
   } catch (error) {
     updaterConfigured = false;
+    const message = error instanceof Error ? error.message : 'Unable to check for updates.';
     sendUpdaterStatus({
-      message: error instanceof Error ? error.message : 'Unable to check for updates.',
+      message,
       status: 'not-configured',
     });
-    return { ok: false };
+    return { ok: false, status: 'not-configured', message, version: app.getVersion() };
   }
 });
 

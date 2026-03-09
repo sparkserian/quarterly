@@ -18,7 +18,12 @@ interface Window {
       electron: string;
     };
     updater?: {
-      check: () => Promise<{ ok: boolean }>;
+      check: () => Promise<{
+        ok: boolean;
+        message?: string;
+        status?: 'available' | 'dev-mode' | 'not-configured' | 'up-to-date';
+        version?: string;
+      }>;
       install: () => Promise<{ ok: boolean }>;
       onStatus: (
         callback: (payload: {

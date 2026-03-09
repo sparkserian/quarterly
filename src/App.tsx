@@ -3391,7 +3391,34 @@ function App() {
       message: 'Checking for updates...',
       status: 'checking',
     }));
-    await window.desktopMeta?.updater?.check();
+    const result = await window.desktopMeta?.updater?.check();
+    if (!result) {
+      setUpdaterState((current) => ({
+        ...current,
+        message: 'Updater bridge is not available in this build.',
+        status: 'error',
+      }));
+      return;
+    }
+
+    if (result.status && result.status !== 'available' && result.status !== 'up-to-date') {
+      setUpdaterState((current) => ({
+        ...current,
+        message: result.message ?? current.message,
+        status: result.status,
+        version: result.version ?? current.version,
+      }));
+      return;
+    }
+
+    if (result.status === 'available' || result.status === 'up-to-date') {
+      setUpdaterState((current) => ({
+        ...current,
+        message: result.message ?? current.message,
+        status: result.status,
+        version: result.version ?? current.version,
+      }));
+    }
   };
 
   const handleInstallUpdate = async () => {
@@ -3464,6 +3491,9 @@ function App() {
       : updaterState.status === 'dev-mode'
       ? 'Installed builds only'
       : 'Checking';
+  const updaterActionLabel = updaterState.status === 'checking' ? 'Checking…' : 'Check for updates';
+  const installedVersionLabel = window.desktopMeta?.versions.app ? `v${window.desktopMeta.versions.app}` : 'Current build';
+  const latestVersionLabel = updaterState.version ? `Latest release v${updaterState.version}` : 'Latest release not checked yet';
 
   return (
     <>
@@ -3641,13 +3671,18 @@ function App() {
                 </div>
                 <div className="metric-card">
                   <span>Installed version</span>
-                  <strong>{window.desktopMeta?.versions.app ?? 'Current build'}</strong>
-                  <small>{updaterState.version ? `Latest release ${updaterState.version}` : 'GitHub Releases feed'}</small>
+                  <strong>{installedVersionLabel}</strong>
+                  <small>{latestVersionLabel}</small>
                 </div>
               </div>
               <div className="button-stack">
-                <button className="ghost-button" onClick={handleCheckForUpdates} type="button">
-                  Check for updates
+                <button
+                  className="ghost-button"
+                  disabled={updaterState.status === 'checking'}
+                  onClick={handleCheckForUpdates}
+                  type="button"
+                >
+                  {updaterActionLabel}
                 </button>
                 {updaterState.canInstall ? (
                   <button className="primary-button" onClick={handleInstallUpdate} type="button">
