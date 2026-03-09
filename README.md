@@ -41,7 +41,7 @@ npm run dist
 - editable onboarding panel with debt capture
 - horizontal month planner cards for the next 3-12 months
 - debt ledgers that stay in the same scrollable dashboard view
-- sample data so the app is immediately explorable
+- a clean starter workspace with local-first persistence
 - local-first persistence of planner data, card placement, card size, and theme
 - Supabase client scaffold and prefixed SQL schema for cloud workspace sync
 

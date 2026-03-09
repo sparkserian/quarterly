@@ -1422,8 +1422,31 @@ function getCanvasSize(form: PlannerForm) {
   };
 }
 
-function resetLayouts() {
-  return clonePlan(samplePlan);
+function resetCanvasLayout(form: PlannerForm) {
+  return {
+    ...form,
+    panels: Object.fromEntries(
+      panelOrder.map((panelId) => [
+        panelId,
+        {
+          ...form.panels[panelId],
+          layout: { ...samplePlan.panels[panelId].layout },
+        },
+      ]),
+    ) as PlannerForm['panels'],
+    debts: form.debts.map((debt, index) => {
+      const nextLayout = buildGridLayout(index);
+      return {
+        ...debt,
+        layout: {
+          ...debt.layout,
+          x: nextLayout.x,
+          y: nextLayout.y,
+          zIndex: nextLayout.zIndex,
+        },
+      };
+    }),
+  };
 }
 
 function getTargetLayout(form: PlannerForm, targetType: InteractionTarget, targetId: string) {
@@ -1438,7 +1461,6 @@ interface EditorModalProps {
   form: PlannerForm;
   isOpen: boolean;
   onClose: () => void;
-  onReset: () => void;
   onChange: (next: PlannerForm) => void;
   onAddSplitItem: () => string;
   onAddDebtModel: () => string;
@@ -1448,7 +1470,6 @@ function EditorModal({
   form,
   isOpen,
   onClose,
-  onReset,
   onChange,
   onAddSplitItem,
   onAddDebtModel,
@@ -1529,16 +1550,13 @@ function EditorModal({
       >
         <div className="modal-header">
           <div className="modal-heading">
-            <p className="eyebrow">Planner setup</p>
-            <h2>Income, split planning, and debt models</h2>
+            <p className="eyebrow">Workspace setup</p>
+            <h2>Income, bill routing, and debt tracking</h2>
             <p className="modal-copy">
-              Clean up the assumptions here, then dismiss the modal and arrange every card on the canvas.
+              Set up the workspace here, then return to the canvas and arrange each card the way you want it.
             </p>
           </div>
           <div className="modal-actions">
-            <button className="ghost-button" onClick={onReset} type="button">
-              Restore demo
-            </button>
             <button className="icon-button" onClick={onClose} type="button">
               ×
             </button>
@@ -1550,7 +1568,7 @@ function EditorModal({
             <section className="setup-home">
               <div className="setup-home-hero modal-panel">
                 <div className="setup-home-copy">
-                  <p className="eyebrow">Setup home</p>
+                  <p className="eyebrow">Workspace</p>
                   <h3>Choose what you want to manage</h3>
                   <p>
                     Each area opens as its own setup page, so creating new split items and debt models is
@@ -2282,8 +2300,7 @@ function EditorModal({
 
         <div className="modal-footer">
           <p>
-            Each setup category is separated now so creating a new split item or debt model is distinct from
-            editing an existing one.
+            Changes save automatically, so you can update each section and return to the canvas whenever you are ready.
           </p>
           <div className="modal-footer-actions">
             <button className="ghost-button" onClick={onClose} type="button">
@@ -3553,7 +3570,7 @@ function App() {
                 setForm((current) => toggleCollapse(current, 'panel', 'controls'));
               }}
               panel={form.panels.controls}
-              subtitle="Open setup, restore the demo, or switch appearance"
+              subtitle="Open workspace settings, reset the canvas, or switch appearance"
               title="Controls"
             >
               <div className="button-stack">
@@ -3564,16 +3581,16 @@ function App() {
                   }}
                   type="button"
                 >
-                  Planner setup
+                  Workspace setup
                 </button>
                 <button
                   className="ghost-button"
                   onClick={() => {
-                    setForm(resetLayouts());
+                    setForm((current) => resetCanvasLayout(current));
                   }}
                   type="button"
                 >
-                  Restore layout
+                  Reset canvas
                 </button>
                 <button
                   className="ghost-button"
@@ -3806,9 +3823,6 @@ function App() {
         onChange={setForm}
         onClose={() => {
           setEditorOpen(false);
-        }}
-        onReset={() => {
-          setForm(clonePlan(samplePlan));
         }}
       />
     </>
