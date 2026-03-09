@@ -7,11 +7,13 @@ let mainWindow = null;
 let updateDownloaded = false;
 let updaterConfigured = false;
 let updaterInitialized = false;
+let activeUpdateCheckPromise = null;
 let currentUpdaterState = {
   canInstall: false,
   configured: false,
   message: isDev ? 'Auto-updates run from installed builds, not from dev mode.' : 'Updater idle.',
   status: isDev ? 'dev-mode' : 'up-to-date',
+  updatedAt: Date.now(),
   version: app.getVersion(),
 };
 
@@ -25,6 +27,7 @@ function sendUpdaterStatus(payload) {
     canInstall: updateDownloaded,
     configured: updaterConfigured,
     ...payload,
+    updatedAt: Date.now(),
   };
 
   if (!mainWindow || mainWindow.isDestroyed()) {
@@ -102,7 +105,35 @@ function configureAutoUpdates() {
     });
   });
 
-  autoUpdater
+  runUpdateCheck().catch(() => {});
+
+  setInterval(() => {
+    runUpdateCheck().catch(() => {});
+  }, 1000 * 60 * 30);
+}
+
+async function runUpdateCheck() {
+  if (isDev) {
+    sendUpdaterStatus({
+      message: 'Auto-updates only check from packaged builds.',
+      status: 'dev-mode',
+      version: app.getVersion(),
+    });
+    return currentUpdaterState;
+  }
+
+  if (activeUpdateCheckPromise) {
+    return activeUpdateCheckPromise;
+  }
+
+  updaterConfigured = true;
+  sendUpdaterStatus({
+    message: 'Checking GitHub Releases for a newer build.',
+    status: 'checking',
+    version: currentUpdaterState.version ?? app.getVersion(),
+  });
+
+  activeUpdateCheckPromise = autoUpdater
     .checkForUpdates()
     .then((result) => {
       const latestVersion = result?.updateInfo?.version ?? app.getVersion();
@@ -113,18 +144,23 @@ function configureAutoUpdates() {
           version: latestVersion,
         });
       }
+
+      return currentUpdaterState;
     })
     .catch((error) => {
       updaterConfigured = false;
       sendUpdaterStatus({
         message: error.message,
         status: 'not-configured',
+        version: app.getVersion(),
       });
+      return currentUpdaterState;
+    })
+    .finally(() => {
+      activeUpdateCheckPromise = null;
     });
 
-  setInterval(() => {
-    autoUpdater.checkForUpdates().catch(() => {});
-  }, 1000 * 60 * 30);
+  return activeUpdateCheckPromise;
 }
 
 function createWindow() {
@@ -171,40 +207,8 @@ app.whenReady().then(() => {
 });
 
 ipcMain.handle('updater:check', async () => {
-  if (isDev) {
-    sendUpdaterStatus({
-      message: 'Auto-updates only check from packaged builds.',
-      status: 'dev-mode',
-    });
-    return { ok: false, status: 'dev-mode', version: app.getVersion() };
-  }
-
-  try {
-    updaterConfigured = true;
-    updateDownloaded = false;
-    const result = await autoUpdater.checkForUpdates();
-    const latestVersion = result?.updateInfo?.version ?? app.getVersion();
-    const status = isSameVersion(latestVersion, app.getVersion()) ? 'up-to-date' : 'available';
-
-    sendUpdaterStatus({
-      message:
-        status === 'available'
-          ? `Update ${latestVersion} is available. Downloading now.`
-          : `You are up to date on ${latestVersion}.`,
-      status,
-      version: latestVersion,
-    });
-
-    return { ok: true, status, version: latestVersion };
-  } catch (error) {
-    updaterConfigured = false;
-    const message = error instanceof Error ? error.message : 'Unable to check for updates.';
-    sendUpdaterStatus({
-      message,
-      status: 'not-configured',
-    });
-    return { ok: false, status: 'not-configured', message, version: app.getVersion() };
-  }
+  updateDownloaded = false;
+  return runUpdateCheck();
 });
 
 ipcMain.handle('updater:install', async () => {

@@ -69,6 +69,7 @@ interface UpdaterState {
     | 'error'
     | 'not-configured'
     | 'up-to-date';
+  updatedAt: number;
   version?: string;
 }
 
@@ -2905,8 +2906,9 @@ function App() {
   const [updaterState, setUpdaterState] = useState<UpdaterState>({
     canInstall: false,
     configured: false,
-    message: 'Updater idle.',
-    status: 'checking',
+    message: 'Waiting for updater status.',
+    status: 'up-to-date',
+    updatedAt: 0,
   });
   const cloudBootstrapUserIdRef = useRef<string | null>(null);
   const skipNextCloudPushRef = useRef(false);
@@ -2935,20 +2937,63 @@ function App() {
   }, [authEmail]);
 
   useEffect(() => {
-    window.desktopMeta?.updater?.getState?.().then((payload) => {
-      if (payload) {
-        setUpdaterState(payload);
+    let receivedLiveStatus = false;
+    let latestSeenState = 0;
+
+    const applyUpdaterState = (payload: UpdaterState | null | undefined) => {
+      if (!payload) {
+        return;
       }
-    });
+
+      if ((payload.updatedAt ?? 0) < latestSeenState) {
+        return;
+      }
+
+      latestSeenState = payload.updatedAt ?? latestSeenState;
+      setUpdaterState(payload);
+    };
 
     const unsubscribe = window.desktopMeta?.updater?.onStatus((payload) => {
-      setUpdaterState(payload);
+      receivedLiveStatus = true;
+      applyUpdaterState(payload);
     });
+
+    window.desktopMeta?.updater
+      ?.getState?.()
+      .then((payload) => {
+        if (!receivedLiveStatus) {
+          applyUpdaterState(payload);
+        }
+      })
+      .catch(() => {});
 
     return () => {
       unsubscribe?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (updaterState.status !== 'checking' && updaterState.status !== 'downloading') {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      window.desktopMeta?.updater
+        ?.getState?.()
+        .then((payload) => {
+          if (!payload) {
+            return;
+          }
+
+          setUpdaterState((current) => ((payload.updatedAt ?? 0) > (current.updatedAt ?? 0) ? payload : current));
+        })
+        .catch(() => {});
+    }, 1500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [updaterState.status]);
 
   useEffect(() => {
     if (!supabase) {
@@ -3396,33 +3441,28 @@ function App() {
       ...current,
       message: 'Checking for updates...',
       status: 'checking',
+      updatedAt: Date.now(),
     }));
-    const result = await window.desktopMeta?.updater?.check();
-    if (!result) {
+
+    try {
+      const result = await window.desktopMeta?.updater?.check();
+      if (!result) {
+        setUpdaterState((current) => ({
+          ...current,
+          message: 'Updater bridge is not available in this build.',
+          status: 'error',
+          updatedAt: Date.now(),
+        }));
+        return;
+      }
+
+      setUpdaterState((current) => ((result.updatedAt ?? 0) >= (current.updatedAt ?? 0) ? result : current));
+    } catch (error) {
       setUpdaterState((current) => ({
         ...current,
-        message: 'Updater bridge is not available in this build.',
+        message: error instanceof Error ? error.message : 'Unable to check for updates.',
         status: 'error',
-      }));
-      return;
-    }
-
-    if (result.status && result.status !== 'available' && result.status !== 'up-to-date') {
-      setUpdaterState((current) => ({
-        ...current,
-        message: result.message ?? current.message,
-        status: result.status,
-        version: result.version ?? current.version,
-      }));
-      return;
-    }
-
-    if (result.status === 'available' || result.status === 'up-to-date') {
-      setUpdaterState((current) => ({
-        ...current,
-        message: result.message ?? current.message,
-        status: result.status,
-        version: result.version ?? current.version,
+        updatedAt: Date.now(),
       }));
     }
   };

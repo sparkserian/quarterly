@@ -19,9 +19,20 @@ interface Window {
     };
     updater?: {
       check: () => Promise<{
-        ok: boolean;
-        message?: string;
-        status?: 'available' | 'dev-mode' | 'not-configured' | 'up-to-date';
+        canInstall: boolean;
+        configured: boolean;
+        message: string;
+        percent?: number;
+        status:
+          | 'available'
+          | 'checking'
+          | 'dev-mode'
+          | 'downloaded'
+          | 'downloading'
+          | 'error'
+          | 'not-configured'
+          | 'up-to-date';
+        updatedAt: number;
         version?: string;
       }>;
       getState: () => Promise<{
@@ -38,6 +49,7 @@ interface Window {
           | 'error'
           | 'not-configured'
           | 'up-to-date';
+        updatedAt: number;
         version?: string;
       }>;
       install: () => Promise<{ ok: boolean }>;
@@ -56,6 +68,7 @@ interface Window {
             | 'error'
             | 'not-configured'
             | 'up-to-date';
+          updatedAt: number;
           version?: string;
         }) => void,
       ) => () => void;
