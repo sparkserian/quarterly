@@ -2917,12 +2917,15 @@ function App() {
   const cloudBootstrapUserIdRef = useRef<string | null>(null);
   const skipNextCloudPushRef = useRef(false);
   const lastCloudSyncAtRef = useRef<string | null>(null);
+  const latestFormRef = useRef(form);
+  const latestThemeRef = useRef(theme);
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(form));
     if (window.localStorage.getItem(legacyStorageKey)) {
       window.localStorage.removeItem(legacyStorageKey);
     }
+    latestFormRef.current = form;
   }, [form]);
 
   useEffect(() => {
@@ -2931,6 +2934,7 @@ function App() {
       window.localStorage.removeItem(legacyThemeKey);
     }
     document.documentElement.dataset.theme = theme;
+    latestThemeRef.current = theme;
   }, [theme]);
 
   useEffect(() => {
@@ -3070,7 +3074,7 @@ function App() {
           return;
         }
 
-        const syncedRecord = await saveWorkspaceToCloud(form, theme);
+        const syncedRecord = await saveWorkspaceToCloud(latestFormRef.current, latestThemeRef.current);
         if (isCancelled) {
           return;
         }
@@ -3095,7 +3099,7 @@ function App() {
     return () => {
       isCancelled = true;
     };
-  }, [authUser, form, theme]);
+  }, [authUser]);
 
   useEffect(() => {
     if (!supabase || !authUser) {
