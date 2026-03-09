@@ -2325,6 +2325,7 @@ interface CloudSyncModalProps {
   isConfigured: boolean;
   isLoading: boolean;
   isOpen: boolean;
+  lastSyncedAt: string | null;
   mode: AuthMode;
   password: string;
   user: User | null;
@@ -2346,6 +2347,7 @@ function CloudSyncModal({
   isConfigured,
   isLoading,
   isOpen,
+  lastSyncedAt,
   mode,
   password,
   user,
@@ -2363,6 +2365,7 @@ function CloudSyncModal({
   }
 
   const isSignedIn = Boolean(user);
+  const syncStatusLabel = isLoading ? 'Syncing' : lastSyncedAt ? 'Synced' : isBootstrapping ? 'Loading cloud' : 'Auto-sync on';
 
   return (
     <div
@@ -2410,7 +2413,8 @@ function CloudSyncModal({
                 </div>
                 <div className="metric-card">
                   <span>Status</span>
-                  <strong>{isLoading || isBootstrapping ? 'Syncing' : 'Auto-sync on'}</strong>
+                  <strong>{syncStatusLabel}</strong>
+                  <small>{lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString() : 'No cloud save yet'}</small>
                 </div>
               </div>
 
@@ -3493,10 +3497,12 @@ function App() {
     ? 'muted'
     : !authUser
     ? 'muted'
-    : isCloudBusy || isCloudBootstrapping
+    : isCloudBusy
     ? 'syncing'
     : lastCloudSyncedAt
     ? 'ready'
+    : isCloudBootstrapping
+    ? 'syncing'
     : 'muted';
   const cloudStatusLabel = cloudErrorMessage
     ? 'Cloud error'
@@ -3504,12 +3510,12 @@ function App() {
     ? 'Cloud off'
     : !authUser
     ? 'Local only'
-    : isCloudBootstrapping
-    ? 'Loading cloud'
     : isCloudBusy
-    ? 'Working'
+    ? 'Syncing'
     : lastCloudSyncedAt
     ? 'Synced'
+    : isCloudBootstrapping
+    ? 'Loading cloud'
     : 'Connected';
   const cloudStatusDetail = authUser
     ? authUser.email ?? 'Signed in'
@@ -3881,6 +3887,7 @@ function App() {
         isConfigured={isSupabaseConfigured}
         isLoading={isCloudBusy}
         isOpen={isCloudModalOpen}
+        lastSyncedAt={lastCloudSyncedAt}
         mode={authMode}
         onClose={() => {
           setCloudModalOpen(false);

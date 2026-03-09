@@ -25,6 +25,12 @@ module.exports = {
     uninstallerIcon: 'build/icon.ico',
   },
   productName: 'Quarterly',
+  linux: {
+    artifactName: '${productName}-${version}-${arch}.${ext}',
+    category: 'Office;Finance;',
+    icon: 'build/icon.png',
+    target: ['AppImage', 'deb'],
+  },
   ...(owner && repo
     ? {
         publish: [
