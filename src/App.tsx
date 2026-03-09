@@ -2935,6 +2935,12 @@ function App() {
   }, [authEmail]);
 
   useEffect(() => {
+    window.desktopMeta?.updater?.getState?.().then((payload) => {
+      if (payload) {
+        setUpdaterState(payload);
+      }
+    });
+
     const unsubscribe = window.desktopMeta?.updater?.onStatus((payload) => {
       setUpdaterState(payload);
     });

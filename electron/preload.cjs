@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('desktopMeta', {
   },
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),
+    getState: () => ipcRenderer.invoke('updater:get-state'),
     install: () => ipcRenderer.invoke('updater:install'),
     onStatus: (callback) => {
       const listener = (_event, payload) => callback(payload);

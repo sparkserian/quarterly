@@ -24,6 +24,22 @@ interface Window {
         status?: 'available' | 'dev-mode' | 'not-configured' | 'up-to-date';
         version?: string;
       }>;
+      getState: () => Promise<{
+        canInstall: boolean;
+        configured: boolean;
+        message: string;
+        percent?: number;
+        status:
+          | 'available'
+          | 'checking'
+          | 'dev-mode'
+          | 'downloaded'
+          | 'downloading'
+          | 'error'
+          | 'not-configured'
+          | 'up-to-date';
+        version?: string;
+      }>;
       install: () => Promise<{ ok: boolean }>;
       onStatus: (
         callback: (payload: {

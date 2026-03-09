@@ -6,24 +6,42 @@ const isDev = !app.isPackaged;
 let mainWindow = null;
 let updateDownloaded = false;
 let updaterConfigured = false;
+let updaterInitialized = false;
+let currentUpdaterState = {
+  canInstall: false,
+  configured: false,
+  message: isDev ? 'Auto-updates run from installed builds, not from dev mode.' : 'Updater idle.',
+  status: isDev ? 'dev-mode' : 'up-to-date',
+  version: app.getVersion(),
+};
 
 function isSameVersion(a, b) {
   return String(a ?? '').trim() === String(b ?? '').trim();
 }
 
 function sendUpdaterStatus(payload) {
+  currentUpdaterState = {
+    ...currentUpdaterState,
+    canInstall: updateDownloaded,
+    configured: updaterConfigured,
+    ...payload,
+  };
+
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
   }
 
-  mainWindow.webContents.send('updater:status', {
-    canInstall: updateDownloaded,
-    configured: updaterConfigured,
-    ...payload,
-  });
+  mainWindow.webContents.send('updater:status', currentUpdaterState);
 }
 
 function configureAutoUpdates() {
+  if (updaterInitialized) {
+    sendUpdaterStatus(currentUpdaterState);
+    return;
+  }
+
+  updaterInitialized = true;
+
   if (isDev) {
     sendUpdaterStatus({
       message: 'Auto-updates run from installed builds, not from dev mode.',
@@ -128,16 +146,22 @@ function createWindow() {
   if (isDev) {
     window.loadURL('http://127.0.0.1:5180');
     window.webContents.openDevTools({ mode: 'detach' });
+    window.webContents.once('did-finish-load', () => {
+      sendUpdaterStatus(currentUpdaterState);
+    });
     return window;
   }
 
   window.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  window.webContents.once('did-finish-load', () => {
+    sendUpdaterStatus(currentUpdaterState);
+    configureAutoUpdates();
+  });
   return window;
 }
 
 app.whenReady().then(() => {
   mainWindow = createWindow();
-  configureAutoUpdates();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -193,6 +217,10 @@ ipcMain.handle('updater:install', async () => {
   });
 
   return { ok: true };
+});
+
+ipcMain.handle('updater:get-state', async () => {
+  return currentUpdaterState;
 });
 
 app.on('window-all-closed', () => {
