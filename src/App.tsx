@@ -3489,22 +3489,28 @@ function App() {
 
   const cloudStatusTone = cloudErrorMessage
     ? 'error'
-    : isCloudBusy || isCloudBootstrapping
-    ? 'syncing'
     : !isSupabaseConfigured
     ? 'muted'
-    : authUser
+    : !authUser
+    ? 'muted'
+    : isCloudBusy || isCloudBootstrapping
+    ? 'syncing'
+    : lastCloudSyncedAt
     ? 'ready'
     : 'muted';
   const cloudStatusLabel = cloudErrorMessage
     ? 'Cloud error'
-    : isCloudBusy || isCloudBootstrapping
-    ? 'Syncing'
     : !isSupabaseConfigured
     ? 'Cloud off'
-    : authUser
+    : !authUser
+    ? 'Local only'
+    : isCloudBootstrapping
+    ? 'Loading cloud'
+    : isCloudBusy
+    ? 'Working'
+    : lastCloudSyncedAt
     ? 'Synced'
-    : 'Local only';
+    : 'Connected';
   const cloudStatusDetail = authUser
     ? authUser.email ?? 'Signed in'
     : !isSupabaseConfigured
@@ -3553,10 +3559,8 @@ function App() {
         <section className="canvas-viewport">
           <div className="canvas-board" style={{ height: canvasSize.height, width: canvasSize.width }}>
             <div className="canvas-note">
-              <span>full canvas mode</span>
               <span>{form.debts.length} debt cards</span>
               <span>{form.splitBills.length} split items</span>
-              <span className={`sync-pill sync-pill-${cloudStatusTone}`}>{cloudStatusLabel}</span>
             </div>
 
             <CanvasPanelCard
@@ -3635,7 +3639,7 @@ function App() {
               meta={
                 <div>
                   <span>Cloud</span>
-                  <strong>{authUser ? 'Connected' : isSupabaseConfigured ? 'Ready' : 'Not set'}</strong>
+                  <strong>{cloudStatusLabel}</strong>
                 </div>
               }
               onActivate={() => {

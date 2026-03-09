@@ -175,20 +175,20 @@ table {
 }
 
 .canvas-note {
-  position: sticky;
-  top: 72px;
-  left: 18px;
-  z-index: 400;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
   display: flex;
   gap: 0.7rem;
   width: max-content;
   padding: 0.65rem 0.85rem;
-  margin: 1rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--panel-soft);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(18px);
+  pointer-events: none;
 }
 
 .canvas-note span,
